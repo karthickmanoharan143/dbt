@@ -33,5 +33,15 @@ models:
       +schema: staging
       +materialized: view
 
+seeds:
+  dbt_interview:
+    +database: dbt
+    +schema: staging
+
+snapshots:
+  dbt_interview:
+    +database: dbt
+    +schema: snapshots
+
 vars:
   "dbt_date:time_zone": "Europe/Berlin"

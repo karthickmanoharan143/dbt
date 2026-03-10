@@ -1,0 +1,11 @@
+stage_name,stage_sort_order,target_win_probability
+Prospecting,1,0.1
+Qualification,2,0.2
+Needs Analysis,3,0.3
+Value Proposition,4,0.4
+Id. Decision Makers,5,0.5
+Perception Analysis,6,0.6
+Proposal/Price Quote,7,0.7
+Negotiation/Review,8,0.8
+Closed Won,9,1.0
+Closed Lost,10,0.0

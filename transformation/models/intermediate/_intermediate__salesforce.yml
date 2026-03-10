@@ -1,0 +1,91 @@
+version: 2
+
+models:
+  - name: int_salesforce__opportunity_enriched
+    description: "Oppurtunity-level intermediate model with account,contact,campaign, and user information."
+    config:
+      tags: ['intermediate', 'sales']
+    columns:
+      - name: opportunity_sk
+        description: "Surrogate key for the sales opportunity, generated using a hash of the opportunity_id."
+        tests:
+          - not_null
+          - unique
+      - name: account_id
+        description: "Unique identifier for the account associated with the sales data."     
+      - name: opportunity_id
+        description: "Unique identifier for the sales opportunity linked to the account."
+        tests:
+          - not_null
+          - unique
+      - name: stage_bucket
+        description: "Normalized stage grouping"
+        tests:
+          - accepted_values:
+              values: ['pipeline_early', 'pipeline_late', 'closed_won', 'closed_lost', 'other']
+      - name: owner_user_id
+        description: "Opportunity owner user id"
+
+
+  - name: int_salesforce__opportunity_stage_history
+    description: "Historical stage progression of sales opportunities, capturing changes in stage over time for each opportunity."
+    config:
+      tags: ['intermediate', 'sales', 'history']
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - opportunity_id
+            - stage_changed_at
+            - opportunity_history_id
+    columns:
+      - name: stage_change_sk
+        description: "Surrogate key for the stage History event"
+        tests:
+          - not_null
+          - unique
+      - name: opportunity_id
+        description: "Unique identifier for the sales opportunity linked to the account."
+        # ...existing code...
+      - name: is_latest_stage_record
+        description: "Flag to identify the latest stage record for each opportunity, indicating the current stage of the sales opportunity."
+        tests:
+          - not_null
+  
+  - name: int_salesforce__case_events
+    description: "Incremental case event stream combining case creation and status change events"
+    config:
+      tags: ['intermediate', 'support', 'incremental']
+    columns:
+      - name: case_event_sk
+        description: "Surrogate key for the case event"
+        tests:
+          - not_null
+          - unique
+      - name: case_id
+        description: "Unique identifier for the support case associated with the event."
+        tests:
+          - not_null
+      - name: event_type
+        description: "Type of the case event"
+        tests:
+          - accepted_values:
+              values: ['created', 'status_change']
+      - name: event_timestamp
+        description: "Timestamp of the case event"
+        tests:
+          - not_null
+
+  - name: int_shared__date_spine
+    description: "Reusable date spine model that generates a continuous sequence of dates, serving as a foundational table for time-based analyses across various models."
+    config:
+      tags: ['intermediate', 'shared', 'date']
+    columns:
+      - name: date_key
+        description: "Integer date key for the date in YYYYMMDD format, serving as a surrogate key for date-based analyses."
+        tests:
+          - not_null
+          - unique
+      - name: calendar_date
+        description: "Actual calendar date corresponding to the date_key, used for joining with other models based on date."
+        tests:
+          - not_null

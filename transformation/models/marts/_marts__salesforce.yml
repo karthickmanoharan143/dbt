@@ -1,0 +1,212 @@
+version: 2
+
+models:
+  - name: dim_salesforce__account
+    description: "Dimension table for Salesforce account data, providing a structured representation of account attributes for analysis and reporting."
+    config:
+      tags: ['dimension','mart','account']
+    columns:
+      - name: account_id
+        description: "Account natural Key"
+        tests:
+          - not_null
+          - unique
+      - name: account_sk
+        description: "Surrogate key for the account dimension, used for joining with fact tables."
+        tests:
+          - not_null
+          - unique
+      - name: account_type
+        description: "Type of the account, categorizing accounts based on their characteristics or business relationships."
+      - name: is_active
+        description: "Indicator of whether the account is currently active, used for filtering and analysis of active accounts."
+        tests:
+          - not_null
+
+  - name: dim_salesforce__user
+    description: "Dimension table for Salesforce user data, providing a structured representation of user attributes for analysis and reporting."
+    config:
+      tags: ['dimension','mart','user']
+    columns:
+      - name: user_id
+        description: "User natural Key"
+        tests:
+          - not_null
+          - unique
+      - name: user_sk
+        description: "Surrogate key for the user dimension, used for joining with fact tables."
+        tests:
+          - not_null
+          - unique
+      - name: is_active
+        description: "Indicator of whether the user is currently active, used for filtering and analysis of active users."
+        tests:
+          - not_null
+
+  - name: dim_salesforce__campaign
+    description: "Dimension table for Salesforce campaign data, providing a structured representation of campaign attributes for analysis and reporting."
+    config:
+      tags: ['dimension','mart','campaign']
+    columns:
+      - name: campaign_id
+        description: "Campaign natural Key"
+        tests:
+          - not_null
+          - unique
+      - name: campaign_sk
+        description: "Surrogate key for the campaign dimension, used for joining with fact tables."
+        tests:
+          - not_null
+          - unique
+      - name: is_active
+        description: "Indicator of whether the campaign is currently active, used for filtering and analysis of active campaigns."
+        tests:
+          - not_null
+
+  - name: dim_shared__date
+    description: "Shared dimension table for date attributes, providing a structured representation of date-related information for analysis and reporting across multiple fact tables."
+    config:
+      tags: ['dimension','mart','date']
+    columns:
+      - name: date_key
+        description: "Integer YYYYMMDD Key"
+        tests:
+          - not_null
+          - unique
+      - name: calendar_date
+        description: "Calendar date, representing a specific day in the date dimension."
+        tests:
+          - not_null
+
+  - name: fct_salesforce__opportunity
+    description: "Fact table for Salesforce opportunity data, capturing key metrics and measures related to sales opportunities for analysis and reporting."
+    config:
+      tags: ['fact','mart','sales','opportunity']
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - opportunity_id
+            - create_date_key
+    columns:
+      - name: opportunity_id
+        description: "Opportunity natural Key"
+        tests:
+          - not_null
+          - unique
+      - name: opportunity_sk
+        description: "Surrogate key for the opportunity fact table, used for joining with dimension tables."
+        tests:
+          - not_null
+          - unique
+      - name: account_sk
+        description: "Foreign key linking to the account dimension, representing the account associated with the sales opportunity."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_salesforce__account')
+              field: account_sk
+      - name: campaign_sk
+        description: "Foreign key linking to the campaign dimension, representing the campaign associated with the sales opportunity."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_salesforce__campaign')
+              field: campaign_sk
+      - name: owner_user_sk
+        description: "Foreign key linking to the user dimension, representing the user who owns the sales opportunity."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_salesforce__user')
+              field: user_sk
+      - name: create_date_key
+        description: "Foreign key linking to the date dimension, representing the date when the sales opportunity was created."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_shared__date')
+              field: date_key
+      - name: close_date_key
+        description: "Foreign key linking to the date dimension, representing the expected close date of the sales opportunity."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_shared__date')
+              field: date_key
+      - name: current_stage_name
+        description: "Current stage of the sales opportunity, indicating the progress of the opportunity through the sales pipeline."
+      - name: stage_bucket
+        description: "Categorization of the sales opportunity stage into buckets (e.g., early, mid, late) for analysis and reporting."
+        tests:
+          - accepted_values:
+              values: ['pipeline_early', 'pipeline_late' , 'closed_won', 'closed_lost' , 'other']
+      - name: is_overdue
+        description: "Indicator of whether the sales opportunity is overdue based on the expected close date, used for identifying opportunities that require attention."
+        tests:
+          - not_null
+        
+  - name: fct_salesforce__case_event
+    description: "Fact table for Salesforce case events, capturing key metrics and measures related to customer support cases for analysis and reporting."
+    config:
+      tags: ['fact','mart','support']
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - case_id
+            - case_event_sequence
+    columns:
+      - name: case_id
+        description: "Case natural Key"
+        tests:
+          - not_null
+          - unique
+      - name: case_event_sk
+        description: "Surrogate key for the case event fact table, used for joining with dimension tables."
+        tests:
+          - not_null
+          - unique
+      - name: account_sk
+        description: "Foreign key linking to the account dimension, representing the account associated with the customer support case."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_salesforce__account')
+              field: account_sk
+      - name: owner_user_sk
+        description: "Foreign key linking to the user dimension, representing the user who owns the customer support case."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_salesforce__user')
+              field: user_sk
+      - name: event_date_key
+        description: "Foreign key linking to the date dimension, representing the date when the case event occurred."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_shared__date')
+              field: date_key
+      - name: event_type
+        description: "Type of the case event, categorizing events based on their nature (e.g., creation, update, resolution) for analysis and reporting."
+        tests:
+          - accepted_values:
+              values: ['created', 'stattus_change']
+      - name: status_after_event
+        description: "Status of the customer support case after the event, indicating the current state of the case for analysis and reporting."
+        tests:
+          - accepted_values:
+              values: ['new', 'working', 'escalated', 'closed']
+      - name: origin
+        description: "Origin of the customer support case, indicating how the case was initiated (e.g., email, phone, web) for analysis and reporting."
+        tests:
+          - accepted_values:
+              values: ['email', 'phone', 'web', 'other']
+      - name: priority
+        description: "Priority level of the customer support case, indicating the urgency of the case for analysis and reporting."
+        tests:
+          - accepted_values:
+              values: ['low', 'medium', 'high', 'critical']
+      - name: case_event_sequence
+        description: "Sequence number of the case event, used to order events chronologically for each case."
+        tests:
+          - not_null

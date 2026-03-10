@@ -1,0 +1,21 @@
+version: 2
+
+seeds:
+  - name: seed_salesforce__opportunity_stage_targets
+    description: "Mapping of Salesforce opportunity stages to normalized stage buckets for consistent analysis and reporting."
+    config:
+      tags: ['seed', 'sales']
+    columns:
+      - name: stage_name
+        description: "salesforce stage name"
+        tests:
+          - not_null
+          - unique
+      - name: stage_sort_order
+        description: "stage ordering"
+        tests:
+          - not_null
+      - name: target_win_probability
+        description: "target win probability for the stage"
+        tests:
+          - not_null

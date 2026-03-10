@@ -1,0 +1,16 @@
+version: 2
+
+snapshots:
+  - name: snap_salesforce__account_scd2
+    description: "SCD Type 2 snapshot of Salesforce account data, capturing historical changes to account attributes over time."
+    columns:
+      - name: account_id
+        description: "Account natural Key"
+        tests:
+          - not_null
+      - name: dbt_valid_from
+        description: "Start timestamp for the validity of the snapshot record, indicating when the record became active."
+        tests:
+          - not_null
+      - name: dbt_valid_to
+        description: "End timestamp for the validity of the snapshot record, indicating when the record was superseded by a newer record."
